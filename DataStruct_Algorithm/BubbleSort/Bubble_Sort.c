@@ -11,6 +11,7 @@ void bubbleSort(int *array, int len);
 
 int main(int argc, char **argv)
 {
+    // 定义数组
     int array[] = {1, 2, 3, 7, 3, 4, 5, 3, 9, 8, 2, 7, 5, 9, 8, 7};
     bubbleSort(array, sizeof(array)/ sizeof(int));
     printf("array after bubble sort: \n");
