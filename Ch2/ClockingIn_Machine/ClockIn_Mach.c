@@ -199,7 +199,7 @@ void leaveVerifie(simu_Clock punchIn_time, simu_Clock punchOut_time, Weekly_resu
         min = (punchOut_time.minute + punchOut_time.minute);
         min /= 100;
         today_Work_Time += min;
-        today_Work_Time--;
+        today_Work_Time -= 1;
     }else
     {
         min = (punchOut_time.minute - punchOut_time.minute);
