@@ -74,6 +74,7 @@
 
 
 ## 功能模块及数据（结构）-Function&data(struct)
+PS: 新增 set_fcntl(int fd, int flags) & int clear_fcntl(int fd, int flags)
 ```
 #define WORIKING_HOURS      (9.00)             // Daliy Working Hours
 #define ONE_SECOND          (278)        // define 1 hours = 6 second -> 1 seconds  = 1/3600 seconds = 278 us
@@ -102,7 +103,6 @@ typedef struct
 float today_Work_Time = 0;        
 float yesterday_Work_Time = 0;
 int absence_times = 2;
-int flags, flags2;
 
 /**
  * a simulate timer
@@ -158,6 +158,18 @@ int clockin_machine_handler(simu_Clock current_Time, simu_Clock *punchIn_time, s
 
 // Mainly program
 int clockin_machine_start();
+
+/** Set NON_BLOCK  IO
+ * @param fd API type
+ * @param flags IO type
+*/
+int set_fcntl(int fd, int flags);
+
+/** Clear NON_BLOCK IO
+ * @param fd API type
+ * @param flags IO type
+*/
+int clear_fcntl(int fd, int flags);
 
 ```
 

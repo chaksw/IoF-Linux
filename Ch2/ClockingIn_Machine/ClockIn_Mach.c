@@ -2,7 +2,7 @@
  * @Author: Runsheng WU 
  * @Date: 2020-07-12 19:55:22 
  * @Last Modified by: Runsheng WU
- * @Last Modified time: 2020-07-18 10:53:02
+ * @Last Modified time: 2020-07-20 17:22:38
  */
 
 #include "includes.h"
@@ -12,18 +12,7 @@
 int main(int argc, char **argv)
 {
     //使用非阻塞io
-    // int flags, flags2;
-    if((flags = fcntl(STDIN_FILENO, F_GETFL, 0)) < 0)   // 获取(F_GETFL)标准IO输入(STDIN_FILENO)目前的状态，赋给flags
-    {
-        perror("fcntl");
-        return -1;
-    }
-    flags2 = flags | O_NONBLOCK;                        
-    if(fcntl(STDIN_FILENO, F_SETFL, flags2) < 0)        // 将flags = O_NONBLOCK 赋给(F_SETLF)标准IO输入，此时标准IO输入为非阻塞状态
-    {
-        perror("fcntl");
-        return -1;
-    }
+    set_fcntl(STDIN_FILENO, O_NONBLOCK);
     clockin_machine_start();
     return 0;
 }
@@ -82,7 +71,7 @@ int timer(simu_Clock *t)
 }
 
 
-int punchIn(simu_Clock cur_t ,simu_Clock *punch_Time)
+int punchIn(simu_Clock cur_t ,simu_Clock *punchIn_Time)
 {
     int try_Time = 5;
     int inv_Id = 0;
@@ -90,7 +79,7 @@ int punchIn(simu_Clock cur_t ,simu_Clock *punch_Time)
     
 
     // Entre ID
-    printf("Please entre your 6 number employee ID:\r\n");
+    printf("Please entry your 6 number employee ID:\r\n");
     scanf("%d", &id);
 
     while ((id / 100000) != 1)
@@ -109,7 +98,7 @@ int punchIn(simu_Clock cur_t ,simu_Clock *punch_Time)
 
     inverse_Id(id, &inv_Id);        // Get the inverse Id
     // Entre ID code
-    printf("Please entre your 6 number ID code:\r\n");
+    printf("Please entry your 6 number ID code:\r\n");
     scanf("%d", &id_code);
     try_Time = 5;
     while(id + (inv_Id % 100000) != id_code)
@@ -127,8 +116,8 @@ int punchIn(simu_Clock cur_t ,simu_Clock *punch_Time)
         
     }
     
-    *punch_Time = cur_t;
-    printf("Punch succeed, Your punch time is : %s  %02d:%02d:%02d\r\n", punch_Time->days, punch_Time->hours, punch_Time->minute, punch_Time->seconds);
+    *punchIn_Time = cur_t;
+    printf("Punch succeed, Your punch in time is : %s  %02d:%02d:%02d\r\n", punchIn_Time->days, punchIn_Time->hours, punchIn_Time->minute, punchIn_Time->seconds);
     return 0;
 }
 
@@ -154,7 +143,7 @@ int punchOut(simu_Clock cur_t, simu_Clock *punchOut_time)
     int id = 0;         // Id
 
     // Entre ID
-    printf("Please entre your 6 number employee ID:\r\n");
+    printf("Please entry your 6 number employee ID:\r\n");
     scanf("%d", &id);
 
     while ((id / 100000) != 1)
@@ -170,7 +159,7 @@ int punchOut(simu_Clock cur_t, simu_Clock *punchOut_time)
         }
     }
     *punchOut_time = cur_t;
-    printf("Punch succeed, Your punch time is : %s  %02d:%02d:%02d\r\n", punchOut_time->days, punchOut_time->hours, punchOut_time->minute, punchOut_time->seconds);
+    printf("Punch succeed, Your punch out time is : %s  %02d:%02d:%02d\r\n", punchOut_time->days, punchOut_time->hours, punchOut_time->minute, punchOut_time->seconds);
     return 0;    
 }
 
@@ -182,9 +171,13 @@ void arriveVerifie(simu_Clock punchIn_time, Weekly_resume *wr)
     if ((punchIn_time.hours > 10) && (punchIn_time.hours < 11))
     {
         if (yesterday_Work_Time < 12.00)
+        {
             wr->late_times++;
-    }else if (punchIn_time.hours > 11)
-        wr->late_times++;   
+        }
+    }else if (punchIn_time.hours > 11.00)
+    {
+        wr->late_times++;
+    }   
 }
 
 
@@ -196,18 +189,20 @@ void leaveVerifie(simu_Clock punchIn_time, simu_Clock punchOut_time, Weekly_resu
     today_Work_Time = (punchOut_time.hours - punchIn_time.hours);
     if (punchOut_time.minute - punchOut_time.minute < 0)
     {
-        min = (punchOut_time.minute + punchOut_time.minute);
+        min = (punchOut_time.minute + punchIn_time.minute);
         min /= 100;
         today_Work_Time += min;
         today_Work_Time -= 1;
     }else
     {
-        min = (punchOut_time.minute - punchOut_time.minute);
+        min = (punchOut_time.minute - punchIn_time.minute);
         min /= 100;
         today_Work_Time += min;
     }
     if (today_Work_Time < WORIKING_HOURS)
+    {
         re->le_times++;
+    }
     printf("you have worked for %.2f hours today\n", today_Work_Time);
     yesterday_Work_Time = today_Work_Time;
     today_Work_Time = 0; 
@@ -227,11 +222,11 @@ void print_menu()
 
 void print(Weekly_resume wr)
 {
-    printf("Here is your clocking-in repoet this week, check it out !\r\n");
+    printf("Here is your clocking-in report this week, check it out !\r\n");
     printf("In this week, your had: \r\n");
-    printf("worked %.2f hours per day\n", wr.aver_Work_t);
-    printf("late for work %02d times\n", wr.late_times);
-    printf("leave early for work %02d time\n", wr.le_times);
+    printf("Worked %.2f hours per day\n", wr.aver_Work_t);
+    printf("Late for work %02d times\n", wr.late_times);
+    printf("Leave early for work %02d time\n", wr.le_times);
     printf("Lack of punch for %02d times\n", wr.lack_times);
 }
 
@@ -244,11 +239,7 @@ int clockin_machine_handler(simu_Clock current_Time, simu_Clock *punchIn_time, s
     if(scanf("%d", &ops) >= 0)
     {   
         // 关闭非阻塞IO
-        if(fcntl(STDIN_FILENO, F_SETFL, flags) < 0) // 将flags = O_NONBLOCK 赋给(F_SETLF)标准IO输入，此时标准IO输入为非阻塞状态
-        {
-            perror("fcntl");
-            return -1;
-        }
+        clear_fcntl(STDIN_FILENO, O_NONBLOCK);
         switch (ops)
         {
         case 1:
@@ -256,19 +247,19 @@ int clockin_machine_handler(simu_Clock current_Time, simu_Clock *punchIn_time, s
                 // timer(&current_Time);
                 if (current_Time.hours > 5 && current_Time.hours < 15)
                 {
-                    if(0 == punchIn(current_Time, punchIn_time))
+                    if(punchIn(current_Time, punchIn_time) == 0)
                     {
                         arriveVerifie(*punchIn_time, weekly_resume);
                         absence_times--;
                     }else
                     {
-                        printf("Problem PunchIn appear..\n");
+                        printf("Problem punchIn appear..\n");
                         return 1;
                     }
                 }else
                 {
-                    printf("current time is :%s  %02d:%02d:%02d\r\n", current_Time.days, current_Time.hours, current_Time.minute, current_Time.seconds);
-                    printf("your can't punch in at the moment.\r\n");
+                    printf("Current time is :%s  %02d:%02d:%02d\r\n", current_Time.days, current_Time.hours, current_Time.minute, current_Time.seconds);
+                    printf("Your can't punch in at the moment.\r\n");
                 }
             }
             break;
@@ -279,35 +270,36 @@ int clockin_machine_handler(simu_Clock current_Time, simu_Clock *punchIn_time, s
                 {
                     if (absence_times == 1)       // have punched in 
                     {
-                        if(0 == punchOut(current_Time, punchOut_time))
+                        if(punchOut(current_Time, punchOut_time) == 0)
                         {
                             leaveVerifie(*punchIn_time, *punchOut_time, weekly_resume);
                             absence_times--;
                         }else
                         {
-                            printf("Problem PunchOut appear..\n");
+                            printf("Problem punchOut appear..\n");
                             return 1;
                         }
                         
                     }else if(absence_times == 2)                      // haven't punched in
                     {
                         if(0 == punchOut(current_Time, punchOut_time))
+                        {
                             absence_times--;
-                        else
+                        }else
                         {
                             printf("Problem PunchOut appear..\n");
                             return 1;
                         } 
                     }else
                     {
-                        printf("your have punched today...");
+                        printf("You have punched today...");
                         break;
                     }
                     
                 }else
                 {
-                    printf("current time is :%s  %02d:%02d:%02d\r\n", current_Time.days, current_Time.hours, current_Time.minute, current_Time.seconds);
-                    printf("you can't punch out at the moment.\r\n");
+                    printf("Current time is :%s  %02d:%02d:%02d\r\n", current_Time.days, current_Time.hours, current_Time.minute, current_Time.seconds);
+                    printf("You can't punch out at the moment.\r\n");
                 }  
             }
             break;
@@ -316,26 +308,28 @@ int clockin_machine_handler(simu_Clock current_Time, simu_Clock *punchIn_time, s
                 // timer(&current_Time);
                 if (punchOut_time->hours == 0)
                 {
-                    printf("you can not upgrade punch out time cause you did not punch out before\n");
+                    printf("You can not upgrade punch out time cause you did not punch out before\n");
                     break;
                 }else if (current_Time.hours > 12)
                 {
                     if (absence_times == 0)
                     {
-                        if(0 == punchOut(current_Time, punchOut_time))
+                        if(punchOut(current_Time, punchOut_time) == 0)
                         {
                             leaveVerifie(*punchIn_time, *punchOut_time, weekly_resume);
                             printf("Upgrade punch out time succeed !\n");
                         }
                     }else if(absence_times == 1)                      // haven't punched in
                     {
-                        if(0 == punchOut(current_Time, punchOut_time))
+                        if(punchOut(current_Time, punchOut_time) == 0)
+                        {
                             printf("Upgrade punch out time succeed !\n");
+                        }
                     } 
                 }else
                 {
-                    printf("current time is :%s  %02d:%02d:%02d\r\n", current_Time.days, current_Time.hours, current_Time.minute, current_Time.seconds);
-                    printf("you can't punch out at the moment.\r\n");
+                    printf("Current time is :%s  %02d:%02d:%02d\r\n", current_Time.days, current_Time.hours, current_Time.minute, current_Time.seconds);
+                    printf("You can't punch out at the moment.\r\n");
                 }  
             }
             break;
@@ -377,7 +371,8 @@ int clockin_machine_start()
                 // printf("\n");
                 // printf("\rIs not a good time for work, enjoy your week-end !");
                 // fflush(stdout);
-            }else{   
+            }else
+            {   
                 today = current_Time.days_c;
                 printf("\n");
                 printf("=======================================\n");
@@ -391,14 +386,12 @@ int clockin_machine_start()
             printf("\rcurrent time is :%s  %02d:%02d:%02d", current_Time.days, current_Time.hours, current_Time.minute, current_Time.seconds);
             fflush(stdout);
             
-            if(0 != clockin_machine_handler(current_Time, &punchIn_time, &punchOut_time, &weekly_resume))
-                return 1;
-            //打卡操作完成后，重新开启非阻塞IO
-            if(fcntl(STDIN_FILENO, F_SETFL, flags2) < 0) // 将flags = O_NONBLOCK 赋给(F_SETLF)标准IO输入，此时标准IO输入为非阻塞状态
+            if(clockin_machine_handler(current_Time, &punchIn_time, &punchOut_time, &weekly_resume) != 1)
             {
-                perror("fcntl");
-                return -1;
+                return 1;
             }
+            //打卡操作完成后，重新开启非阻塞IO
+            set_fcntl(STDIN_FILENO, O_NONBLOCK);
             // record the clocking-in situation of last day and refresh all the data
             if (current_Time.days_c != today)       // one day end
             {
@@ -437,6 +430,43 @@ int clockin_machine_start()
                 break;
             }
         }
+    }
+    return 0;
+}
+
+int set_fcntl(int fd, int flags)
+{
+    int cur_flags;
+    //使用非阻塞io
+    // int flags, flags2;
+    if((cur_flags = fcntl(fd, F_GETFL, 0)) < 0)   
+    {
+        perror("fcntl");
+        return -1;
+    }
+    cur_flags |= flags;     
+    if(fcntl(fd, F_SETFL, cur_flags) < 0) 
+    {
+        perror("fcntl");
+        return -1;
+    }
+    return 0;
+}
+
+
+int clear_fcntl(int fd, int flags)
+{
+    int cur_flags;
+    if((cur_flags = fcntl(fd, F_GETFL, 0)) < 0)   
+    {
+        perror("fcntl");
+        return -1;
+    }
+    cur_flags &= ~flags;   
+    if(fcntl(fd, F_SETFL, cur_flags) < 0) 
+    {
+        perror("fcntl");
+        return -1;
     }
     return 0;
 }

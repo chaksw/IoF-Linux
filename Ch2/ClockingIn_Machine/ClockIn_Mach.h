@@ -37,7 +37,6 @@ typedef struct
 float today_Work_Time = 0;        
 float yesterday_Work_Time = 0;
 int absence_times = 2;
-int flags, flags2;
 
 /**
  * a simulate timer
@@ -94,5 +93,16 @@ int clockin_machine_handler(simu_Clock current_Time, simu_Clock *punchIn_time, s
 // Mainly program
 int clockin_machine_start();
 
+/** Set NON_BLOCK  IO
+ * @param fd API type
+ * @param flags IO type
+*/
+int set_fcntl(int fd, int flags);
+
+/** Clear NON_BLOCK IO
+ * @param fd API type
+ * @param flags IO type
+*/
+int clear_fcntl(int fd, int flags);
 
 #endif
