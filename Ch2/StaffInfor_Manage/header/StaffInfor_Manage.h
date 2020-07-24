@@ -45,17 +45,20 @@ typedef struct
     char sexy[8];           
     unsigned int age;                
     unsigned int id;                 
-    unsigned int tel;
+    unsigned long tel;
+    unsigned int le_daliy;                  // leave early times in one day
+    unsigned int late_daliy;                // late times in one day
+    unsigned int punchTimes;                // punch times in one day
     float today_Work_Time;        
     float yesterday_Work_Time;
-    unsigned int punchTimes;
-    Weekly_resume weekly_resume;           // Clocking in Information
+    Weekly_resume weekly_resume;            // Clocking in Information
     simu_Clock punchIn_time;
     simu_Clock punchOut_time;
+    simu_Clock ClockingIn_Stuation;
 }Staff;
 
-Staff Staffs[NUMBEROFSTAFF];        // 20 Staff in a company
-// extern Staff Staffs[NUMBEROFSTAFF];    // for test
+Staff Staffs[NUMBEROFSTAFF];                // 20 Staff in a company
+// extern Staff Staffs[NUMBEROFSTAFF];      // for test
 
 /**
  * a simulate timer
@@ -66,7 +69,6 @@ int timer(simu_Clock *t);
 /**
  * punchIn : verifie empolyee ID and record the punch-in time
  * @param cur_t input, current time
- * @param punchIn_time output, punch in time
  * @param staffs_buf output Staffs struct array 
  */
 int punchIn(simu_Clock cur_t, Staff *staffs_buf);
@@ -85,6 +87,8 @@ int punchOut(simu_Clock cur_t, Staff *staffs_buf);
  * @param staffs_buf output Staffs struct array 
   */
 int punchOut_Update(simu_Clock cur_t, Staff *staffs_buf);
+
+
 /**
  * inverse_Id: get the last 5 ID number in format inverse
  * @param Id empolyee Id
@@ -123,7 +127,6 @@ int clockin_machine_handler(simu_Clock current_Time, Staff *staffs_buf);
 // ClockintIn mainly program
 int clockin_machine_start();
 
-
 // staffsIniit Initilize staff information of each from standard input
 void staffsInit();
 
@@ -145,7 +148,7 @@ void resumeInfor_Weekly();
 // Staff management mainly program
 int start_staff_manager();
 
-/** Set NON_BLOCK  IO
+/** Set NON_BLOCK IO
  * @param fd API type
  * @param flags IO type
 */

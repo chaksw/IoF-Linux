@@ -92,29 +92,11 @@ typedef struct
 
 当输入对应的“ 某个特定ID”后，输出理所当然地需要被“特定” ，让程序表达出打卡机实现的是对20个特定数据结构的处理，而同时处理方式也是一样的，只是输入输出不同。
 关于打卡机的输出，我的理解是：对于某个员工来说，以天为单位出的是当天的迟到、早退、缺卡数，以周为单位输出当周的周总结。所以我们需要修改的是所有输出为周总结的函数，让“某个输出”变为“特定的输出”。而关于打卡时间，因为打卡时间分为上班和下班，但每个员工的打卡时间都是不同的，而且每天结束后我们需要根据打卡时间计算出当天的工作时长，并最后得出每位员工一天的缺卡次数，所以打卡时间（上下班）应该作为结构体内部数据被保存并在一天结束后清零。而在关于判断迟到和早退以及缺卡次数的的三个函数中，都是以某一个员工打卡时间作为输入，周总结作为输出，这对于以一个包含了上述输入输出数据的结构体来说 ，是不合理的（无法实现特定的输入和特定的输出），所以，我们要么将函数作为以结构体作为输入输出的函数的一部分，要么将它本身的输入输出变为结构体数组。
-2. 修改或删除arriveVerifie() 、leaveVerifie() 以及 clockin_machine_handler() 函数，使输出值变为对应ID的周总结数据。同时将打卡时间，相关的全局变量设为结构体数据，同时定义一个函数 resetInfor_Daliy()，在一天结束后将结构体中打卡时间，打卡次数清零（在相关数据都写进Weekly_Resume后）的数据清零 。修改后的结构体为 （为了方便初始化，将原本的用于递减的absence_times（缺卡次数） 改为 punchTimes(打卡次数）：
-```
-// Struct staff
-typedef struct Sta
-{
-    char email[30];         
-    char name[20];          
-    char sexy[6];           
-    unsigned int age;                
-    unsigned int id;                 
-    unsigned int tel;
-    float today_Work_Time;        
-    float yesterday_Work_Time;
-    unsigned int punchTimes;
-    Weekly_resume weekly_resume;           // Clocking in Information
-    simu_Clock punchIn_time;
-    simu_Clock punchOut_time;
-}Staff;
-```
+2. 修改或删除arriveVerifie() 、leaveVerifie() 以及 clockin_machine_handler() 函数，使输出值变为对应ID的周总结数据。同时将打卡时间，相关的全局变量设为结构体数据，同时定义一个函数 resetInfor_Daliy()，在一天结束后将结构体中打卡时间，打卡次数清零（在相关数据都写进Weekly_Resume后）的数据清零 。修改后的结构体为 （为了方便初始化，将原本的用于递减的absence_times（缺卡次数） 改为 punchTimes （打卡次数）
 
+在完成以周为单位完成每一位员工的周总结数据录入后，在最后需要根据每一位员工的周总结输出（在这里作为输入）统计出周奖励名单和乘法名单（工作时长排名前三及没出现考勤异常情况的（先决条件）员工）以及惩罚原因（出现的具体考勤异常）
 
-在完成以周为单位完成每一位员工的周总结数据录入后，在最后需要根据每一位员工的周总结输出（在这里作为输入）统计出周奖励名单和乘法名单（工作时长排名前三及没出现考勤异常情况的（先决条件）员工）以及惩罚原因（出现的具体考勤异常）。
-3. 结合冒泡排序，输入每位员工的考勤情况，根据员工的工作时长(降序)和考勤异常次数（降序）对员工进行排序，最后再根据ID将每位员工进行重新排序（升序）
+3. 结合冒泡排序，输入每位员工的考勤情况，根据员工的工作时长(降序)和考勤异常次数（降序）对员工进行排序，最后再根据ID将每位员工进行重新排序（升序），以便在输出奖励和惩罚名单时调用 Staffs[]结构体数组。
 ```
 // bubble sort according to Clocking-In situation
 void bubbleSort_CI();
@@ -126,7 +108,30 @@ void bubbleSort_WT();
 void bubbleSort_ID();
 ```
 
-5. 定义函数 resumeInfor_Weekly()，输入每位员工的考勤情况（也就是结构体数组），输出奖励和惩罚名单。并将每位员工的周总结清零。
+4. 定义函数 resumeInfor_Weekly()，输入每位员工的考勤情况（也就是结构体数组），输出奖励和惩罚名单。并将每位员工的周总结清零.
+
+最终员工结构体为：
+```
+typedef struct
+{
+    char email[40];         
+    char name[20];          
+    char sexy[8];           
+    unsigned int age;                
+    unsigned int id;                 
+    unsigned int tel;
+    unsigned int le_daliy;                  // leave early times in one day
+    unsigned int late_daliy;                // late times in one day
+    unsigned int punchTimes;                // punch times in one day
+    float today_Work_Time;        
+    float yesterday_Work_Time;
+    Weekly_resume weekly_resume;            // Clocking in Information
+    simu_Clock punchIn_time;
+    simu_Clock punchOut_time;
+    simu_Clock ClockingIn_Stuation;
+}Staff;
+ 
+```
 
 ### 重提非阻塞IO
 不知是之前测试没完整还是这次修改了函数逻辑，非阻塞IO的设置和取消在测试过程中消失了，不过本来之前也是似懂非懂的。现在正好把非阻塞IO的设置和取消设置成函数，这样更方面调用。
@@ -208,17 +213,20 @@ typedef struct
     char sexy[8];           
     unsigned int age;                
     unsigned int id;                 
-    unsigned int tel;
+    unsigned long tel;
+    unsigned int le_daliy;                  // leave early times in one day
+    unsigned int late_daliy;                // late times in one day
+    unsigned int punchTimes;                // punch times in one day
     float today_Work_Time;        
     float yesterday_Work_Time;
-    unsigned int punchTimes;
-    Weekly_resume weekly_resume;           // Clocking in Information
+    Weekly_resume weekly_resume;            // Clocking in Information
     simu_Clock punchIn_time;
     simu_Clock punchOut_time;
+    simu_Clock ClockingIn_Stuation;
 }Staff;
 
-Staff Staffs[NUMBEROFSTAFF];        // 20 Staff in a company
-// extern Staff Staffs[NUMBEROFSTAFF];    // for test
+Staff Staffs[NUMBEROFSTAFF];                // 20 Staff in a company
+// extern Staff Staffs[NUMBEROFSTAFF];      // for test
 
 /**
  * a simulate timer
@@ -229,7 +237,6 @@ int timer(simu_Clock *t);
 /**
  * punchIn : verifie empolyee ID and record the punch-in time
  * @param cur_t input, current time
- * @param punchIn_time output, punch in time
  * @param staffs_buf output Staffs struct array 
  */
 int punchIn(simu_Clock cur_t, Staff *staffs_buf);
@@ -248,6 +255,8 @@ int punchOut(simu_Clock cur_t, Staff *staffs_buf);
  * @param staffs_buf output Staffs struct array 
   */
 int punchOut_Update(simu_Clock cur_t, Staff *staffs_buf);
+
+
 /**
  * inverse_Id: get the last 5 ID number in format inverse
  * @param Id empolyee Id
@@ -286,7 +295,6 @@ int clockin_machine_handler(simu_Clock current_Time, Staff *staffs_buf);
 // ClockintIn mainly program
 int clockin_machine_start();
 
-
 // staffsIniit Initilize staff information of each from standard input
 void staffsInit();
 
@@ -308,7 +316,7 @@ void resumeInfor_Weekly();
 // Staff management mainly program
 int start_staff_manager();
 
-/** Set NON_BLOCK  IO
+/** Set NON_BLOCK IO
  * @param fd API type
  * @param flags IO type
 */

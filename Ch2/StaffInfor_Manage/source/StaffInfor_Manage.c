@@ -271,11 +271,11 @@ void arriveVerifie(Staff *s)
     {
         if (s->yesterday_Work_Time < 12.00)
         {
-            s->weekly_resume.late_times++;
+            s->late_daliy++;
         }
     }else if (s->punchIn_time.hours > 11.00)
     {
-        s->weekly_resume.late_times++;   
+        s->late_daliy++;  
     }
 }
 
@@ -300,8 +300,19 @@ void leaveVerifie(Staff *s)
 
     if (s->today_Work_Time < WORIKING_HOURS)
     {
-        s->weekly_resume.le_times++;
+        if (s->le_daliy == 0)
+        {
+            s->le_daliy++;
+        }
+        // s->weekly_resume.le_times++;
+    }else
+    {
+        if(s->le_daliy == 1)            // in case update punch out time
+        {
+            s->le_daliy--;
+        }
     }
+    
     printf("you have worked for %.2f hours today\n", s->today_Work_Time);
     s->yesterday_Work_Time = s->today_Work_Time;
     s->today_Work_Time = 0; 
@@ -328,8 +339,6 @@ void printf_Wr(Staff *s)
     printf("Late for work %02d times\n", s->weekly_resume.late_times);
     printf("Leave early for work %02d time\n", s->weekly_resume.le_times);
     printf("Lack of punch for %02d times\n", s->weekly_resume.lack_times);
-    printf("Your punch in time is : %s  %02d:%02d:%02d\r\n", s->punchIn_time.days, s->punchIn_time.hours, s->punchIn_time.minute, s->punchIn_time.seconds);
-    printf("Your punch out time is : %s  %02d:%02d:%02d\r\n", s->punchOut_time.days, s->punchOut_time.hours, s->punchOut_time.minute, s->punchOut_time.seconds);
     printf("/***************************************************************************************/\n");
 }
 
@@ -488,7 +497,8 @@ int clockin_machine_start()
 void staffsInit()
 {
     Staff *pStaff = Staffs;                // Pointer to Staffs[0]
-    int id = 100001, age = 0, tel = 0, k = 0;
+    int id = 100001, age = 0, k = 0; 
+    long tel = 0; 
     char name[20], email[30], sexy[6];
     for (int i = 0; i < NUMBEROFSTAFF; i++)
     {
@@ -532,12 +542,12 @@ void staffsInit()
 
         // telephone
         printf("Entry your tel:  ");
-        scanf("%d", &tel);
+        scanf("%ld", &tel);
         while((tel / 10000000000) != 1)
         {
             printf("Entry error, inllegal number, please entry again\n");
             printf("Entry your tel:  ");
-            scanf("%d", &tel);
+            scanf("%ld", &tel);
         }
         pStaff->tel = tel;
 
@@ -575,10 +585,14 @@ void resetInfor_Daliy()
         {
             pStaff->weekly_resume.aver_Work_t += pStaff->yesterday_Work_Time;
         }
+        pStaff->weekly_resume.late_times += pStaff->late_daliy;
+        pStaff->weekly_resume.le_times += pStaff->le_daliy;
         pStaff->weekly_resume.lack_times += (2 - (pStaff->punchTimes));
         memset(&(pStaff->punchIn_time), 0, sizeof(pStaff->punchIn_time));
         memset(&(pStaff->punchOut_time), 0, sizeof(pStaff->punchOut_time));
         (pStaff->punchTimes) = 0;
+        (pStaff->le_daliy) = 0;
+        (pStaff->late_daliy) = 0;
         pStaff++;
     }
 }
@@ -707,6 +721,7 @@ void resumeInfor_Weekly()
     {
         printf("Number %d: \n", count);
         printf_Wr(pStaff);
+
         pStaff++;
         count++;
     }
@@ -723,7 +738,8 @@ void resumeInfor_Weekly()
 
 
 int start_staff_manager()
-{               
+{
+    clear_fcntl(STDIN_FILENO, O_NONBLOCK);               
     staffsInit();
     set_fcntl(STDIN_FILENO, O_NONBLOCK);        // 设置非阻塞IO
     clockin_machine_start();
