@@ -1,5 +1,5 @@
 # Linux 嵌入式开发 - Resume(C&Linux)
-
+[CMAKE](https://www.hahack.com/codes/cmake/#%E5%90%8C%E4%B8%80%E7%9B%AE%E5%BD%95%EF%BC%8C%E5%A4%9A%E4%B8%AA%E6%BA%90%E6%96%87%E4%BB%B6)
 # 1. Linux开发环境搭建
 ## 1.1 Linux操作 - vim编辑器
 Vim编辑器分为三个模式，命令模式、插入模式和编辑模式，同一时间只能在一种模式下工作
@@ -119,6 +119,7 @@ multiple definition of `fun' 多次实现标签，只保留一个标签的实现
 	printf(‘’ the %d\n’’, ABC*5); (5+3)*5
 	宏函数
 	`#define  ABC(x)  (5+(x))`
+	**注意，宏定义只会做简单的替换，而不会计算优先级，为了避免运算符优先级的影响，一般在定义宏函数时，需要对替换单元加上括号，保证优先级计算**
 
 * #ifdef  #else  #endif	  条件编译
 * 预定义宏
@@ -144,9 +145,69 @@ int main()
 ```
 #ifdef + #endif 表示如果在代码中定义了ABC 则编译时运行条件框架下的代码，一般来说，我们在实际代码中不会定义ABC，但在调试过程中，为了方便debugger，我们会用到 -D命令使得ABC得到定义。
 
-* gcc -DABC 等价于 #define ABC
+* gcc -D ABC 等价于 #define ABC
 这样，在调试中就会运行条件预处理框架下的代码
 对于 003.c文件 有: gcc -DABC -o build 003.c
+
+### 另外一些关于宏定义的指令
+```
+#include <stdio.h>
+
+#define TEST
+
+// 取消已经定义的宏
+#undef TEST
+
+//#开头 以if开头 必须以endif结尾
+// #ifdef if defined如果已经定义
+// #ifndef if not defined 如果尚未定义
+#ifndef TEST
+void print_message()
+{
+    printf("这里是定义的\n");
+}
+#else
+void print_message()
+{
+    printf("这里是未定义的\n");
+}
+#endif
+
+#define TEST 8
+// 这里是条件起始 必须加上条件 否则会导致预编译错误 其实是预编译语法错误
+#if TEST == 1
+int a = 100;
+// 如果前一个条件不成立，才会处理到elif 此时如果没有规定成立条件，会导致报错
+#elif TEST < 100
+int a = 1000;
+#else
+int a = 10000;
+#endif
+
+// 一般来说，对于代码当中尚未开发完成的代码，而又可能会导致一些不可预见的问题
+// 但是又不想让程序无法执行 可以加上这样一个预处理指令，代表代码仍需处理
+#warning 这里会出现什么内容
+
+// 直接抛出一个预编译错误
+#error 这里会出现错误么？
+
+// 这个指令功能非常强大
+// 非致命性警告，只有添加了 -Wall 才可发现 - W警告 all所有 显示所有的警告
+#pragma warning("这是什么？")
+
+// 显示一段信息
+#pragma message("这是一段信息")
+
+// 内存对齐方式，括号内指定内存对齐的字节数
+#pragma pack(2)
+
+int main(int argc, char const *argv[])
+{
+    print_message();
+    return 0;
+}
+```
+
 
 ### 宏展开下的#, ##
 * # 字符串化
@@ -866,7 +927,7 @@ int main()
 
 #### 双向链表
 * 双向链表与链表的不同在于节点的不仅可以指向后面的节点，也可以指向前面的节点
-* 双向链表一般都是循环结构，就是说head->next指向最后一个节点，而尾节点->next指向head
+* 双向链表一般都是循环结构，就是说head->front指向最后一个节点，而尾节点->next指向head
 ```
 #include<stdio.h>
 #include<stdlib.h>
@@ -1113,6 +1174,7 @@ int main()
 
 ```
 ### 位运算符
+[关于位运算的使用](https://blog.csdn.net/weixin_42233791/article/details/107433643)
 		1. 左移<<、右移>> 
 		左移：二进制下的左移位、相当于 *2 
 		eg: m<<1 == m*2 m<<n == m*2ˆn
@@ -1733,7 +1795,7 @@ void myswap(int a, int b)        //buf为形参
         b = a^b;
         a = a^b;
 }
-
+ 
 int main()
 {
         int a = 20;
@@ -1759,7 +1821,7 @@ void myswap(int *a, int *b)     //buf为形参
         *b = (*a)^(*b);
         *a = (*a)^(*b);
 }
-
+ 
 int main()
 {
         int a = 20;
@@ -1935,7 +1997,7 @@ int main()
 输出结果 aahello
 ```
 
-#### 比较函数 strcmp() 、strncmp
+#### 比较函数 strcmp() 、strncmp()
 ```
 头文件： #include<string.h>
 函数定义：
@@ -2853,7 +2915,7 @@ AC_PREREQ([2.69])
 AC_INIT([hello, 1.0, runsheng.wu@outlook.com)
 AC_CONFIG_SRCDIR([hello.c])
 AC_CONFIG_HEADERS([config.h])
-# 最后使用automake生成文件AM_INIT_AUTOMAKE(hello,1.0)	
+# 最后使用automake生成文件 AM_INIT_AUTOMAKE(hello,1.0)	
 # Checks for programs.
 AC_PROG_CC
 
